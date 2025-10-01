@@ -72,5 +72,13 @@ void cmd_parser(void * p){
 		}
 		settings.custom_name[15] = 0; // Ensure null terminator
 		save_settings_to_flash();
+	}else if(inData == 0xE2){// Set storage start time (Unix timestamp)
+		uint32_t storage_time = (req->dat[1]<<24) +(req->dat[2]<<16) +(req->dat[3]<<8) +(req->dat[4]&0xff);
+		settings.storage_start_time = storage_time;
+		save_settings_to_flash();
+		// Force display refresh after setting storage timer
+		extern uint16_t battery_mv;
+		extern int16_t temperature;
+		epd_display(get_time(), battery_mv, temperature, 1);
 	}
 }

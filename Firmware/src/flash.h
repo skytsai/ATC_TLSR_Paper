@@ -14,6 +14,7 @@ typedef struct Settings_struct
 	int8_t temp_offset;
 	uint8_t temp_alarm_point;//divide by ten for value
 	char custom_name[16];//custom display name (max 15 chars + null terminator)
+	uint32_t storage_start_time;//Unix timestamp when food was stored
 	uint8_t crc;// Needs to be at the last position otherwise the settings can not be validated on next boot!!!!
 } settings_struct;
 

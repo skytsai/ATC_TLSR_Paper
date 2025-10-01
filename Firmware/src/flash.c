@@ -42,6 +42,7 @@ void reset_settings_to_default(void)
 	for (int i = 0; i < 16; i++) {
 		settings.custom_name[i] = 0;
 	}
+	settings.storage_start_time = 0; // No storage time set by default
 }
 
 void save_settings_to_flash(void)

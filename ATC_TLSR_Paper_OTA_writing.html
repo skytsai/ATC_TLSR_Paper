@@ -312,6 +312,22 @@
       rxTxSendCommand(hexToBytes("dd" + intToHex4(unixNow)));
     }
 
+    function setTimeAndStartTimer(hourOffset) {
+      // Set both device time and storage timer to current time
+      let unixNow = Math.round(Date.now() / 1000)+(60*60*hourOffset);
+      var s = new Date(unixNow*1000).toLocaleString();
+
+      // First set the device time
+      addLog("Setting time: " + s + " : dd" + intToHex4(unixNow));
+      rxTxSendCommand(hexToBytes("dd" + intToHex4(unixNow)));
+
+      // Then start storage timer with same time (with small delay)
+      setTimeout(function() {
+        addLog("Starting storage timer: " + s + " : e2" + intToHex4(unixNow));
+        rxTxSendCommand(hexToBytes("e2" + intToHex4(unixNow)));
+      }, 500);
+    }
+
 	function sendForceEpd(nr)
 	{
       addLog("Forcing EPD : e0" + byteToHex(nr+1));
@@ -327,6 +343,21 @@
       hexName += "00"; // Null terminator
       addLog("Setting custom name: " + name + " : " + hexName);
       rxTxSendCommand(hexToBytes(hexName));
+    }
+
+    function setStorageStartTime() {
+      // Get current Unix timestamp (UTC)
+      var timestamp = Math.floor(Date.now() / 1000);
+      var hexTime = "e2" + timestamp.toString(16).padStart(8, '0');
+      addLog("Setting storage start time (now, UTC): " + timestamp + " : " + hexTime);
+      rxTxSendCommand(hexToBytes(hexTime));
+    }
+
+    function clearStorageTimer() {
+      // Set storage time to 0
+      var hexTime = "e200000000";
+      addLog("Clearing storage timer: " + hexTime);
+      rxTxSendCommand(hexToBytes(hexTime));
     }
 
     function setStatus(statusText) {
@@ -418,9 +449,10 @@
   <button type="button" onclick="sendFile(0x20000,document.getElementById(&quot;cmdIMAGE&quot;).value);">Send
     Firmware</button><br>
   <textarea id="cmdIMAGE" rows="12" cols="100"></textarea><br><br>
-  <label for="hour">Hour offset:</label>
-<input type="number" id="hourOffset" min="-12" max="12" value="2"/><br>
-  <button type="button" onclick="setTime(document.getElementById(&quot;hourOffset&quot;).value);">Set Time</button><br><br>
+  <label for="hour">Hour offset (Taiwan +8):</label>
+<input type="number" id="hourOffset" min="-12" max="12" value="8"/><br>
+  <button type="button" onclick="setTimeAndStartTimer(document.getElementById(&quot;hourOffset&quot;).value);">Set Time & Start Storage Timer</button>
+  <button type="button" onclick="clearStorageTimer();">Clear Storage Timer</button><br><br>
   <label for="customName">Custom Name (max 15 chars):</label>
 <input type="text" id="customName" maxlength="15" placeholder="e.g., Room 1, Office" value=""/><br>
   <button type="button" onclick="setCustomName(document.getElementById(&quot;customName&quot;).value);">Set Custom Name</button><br><br>

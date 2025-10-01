@@ -304,9 +304,10 @@ _attribute_ram_code_ void epd_display(uint32_t time_is, uint16_t battery_mv, int
     sprintf(buff, "%s", BLE_conn_string[ble_get_connected()]);
     obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 232, 20, (char *)buff, 1);
 
-    // Convert Unix timestamp to date (yyyy/mm/dd)
-    // Days since epoch (1970-01-01)
-    uint32_t days = time_is / 86400;
+    // Convert storage start time to date (yyyy/mm/dd)
+    // Use storage_start_time if set, otherwise use current time
+    uint32_t date_to_show = settings.storage_start_time > 0 ? settings.storage_start_time : time_is;
+    uint32_t days = date_to_show / 86400;
     uint32_t year = 1970;
     uint32_t month = 1;
     uint32_t day = 1;
@@ -340,11 +341,23 @@ _attribute_ram_code_ void epd_display(uint32_t time_is, uint16_t battery_mv, int
         }
     }
 
-    sprintf(buff, "%04d/%02d/%02d", year, month, day);
-    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 80, 65, (char *)buff, 1);
+    // Display storage start date and time (fixed - when food was put in fridge)
+    // Calculate hours and minutes from storage timestamp
+    uint32_t time_of_day = date_to_show % 86400; // seconds since midnight
+    uint32_t hours = time_of_day / 3600;
+    uint32_t minutes = (time_of_day % 3600) / 60;
+    sprintf(buff, "Stored: %04d/%02d/%02d %02d:%02d", year, month, day, hours, minutes);
+    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 10, 60, (char *)buff, 1);
 
-    sprintf(buff, "Synology");
-    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 80, 95, (char *)buff, 1);
+    // Calculate storage timer (days in fridge)
+    if (settings.storage_start_time > 0 && time_is >= settings.storage_start_time) {
+        uint32_t elapsed_seconds = time_is - settings.storage_start_time;
+        uint32_t elapsed_days = elapsed_seconds / 86400;
+        sprintf(buff, "Days: %d", elapsed_days);
+    } else {
+        sprintf(buff, "Timer not set");
+    }
+    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 10, 85, (char *)buff, 1);
 
     sprintf(buff, "Bat %dmV  %d'C", battery_mv, EPD_read_temp());
     obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 10, 120, (char *)buff, 1);
