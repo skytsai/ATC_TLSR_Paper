@@ -123,7 +123,27 @@ If you don't need to modify the code, use the existing firmware:
 
 Downloaded web tools are available locally:
 - `ATC_TLSR_Paper_Image_Upload.html` - Bluetooth image uploader
-- `ATC_TLSR_Paper_OTA_writing.html` - Bluetooth OTA firmware flasher
+- `ATC_TLSR_Paper_OTA_writing.html` - Bluetooth OTA firmware flasher with custom name setting
+
+## Custom Features Added
+
+### Custom Name Display
+- Replaces MAC address (ESL_XXXXXX) with custom text
+- Max 15 characters
+- Stored in flash memory (persists across reboots)
+- Set via OTA web tool
+
+**To set custom name:**
+1. Open `ATC_TLSR_Paper_OTA_writing.html`
+2. Connect to device
+3. Enter name in "Custom Name" field (e.g., "Room 1", "Office")
+4. Click "Set Custom Name"
+5. Display will show: "Room 1 BW213" instead of "ESL_A1B2C3 BW213"
+
+### Date Display (yyyy/mm/dd)
+- Changed from HH:MM time format to yyyy/mm/dd date format
+- Automatically calculated from Unix timestamp
+- Set date/time using "Set Time" button in OTA tool
 
 ## Build Process Explained
 

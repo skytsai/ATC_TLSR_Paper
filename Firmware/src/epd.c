@@ -2,6 +2,7 @@
 #include "tl_common.h"
 #include "main.h"
 #include "epd.h"
+#include "flash.h"
 #include "epd_spi.h"
 #include "epd_bw_213.h"
 #include "epd_bwr_213.h"
@@ -245,6 +246,7 @@ _attribute_ram_code_ void epd_display_tiff(uint8_t *pData, int iSize)
 }
 
 extern uint8_t mac_public[6];
+extern settings_struct settings;
 _attribute_ram_code_ void epd_display(uint32_t time_is, uint16_t battery_mv, int16_t temperature, uint8_t full_or_partial)
 {
     if (epd_update_state)
@@ -291,15 +293,60 @@ _attribute_ram_code_ void epd_display(uint32_t time_is, uint16_t battery_mv, int
     obdFill(&obd, 0, 0); // fill with white
 
     char buff[100];
-    sprintf(buff, "ESL_%02X%02X%02X %s", mac_public[2], mac_public[1], mac_public[0], epd_model_string[epd_model]);
+    // Display custom name if set, otherwise show MAC address
+    if (settings.custom_name[0] != 0) {
+        sprintf(buff, "%s %s", settings.custom_name, epd_model_string[epd_model]);
+    } else {
+        sprintf(buff, "ESL_%02X%02X%02X %s", mac_public[2], mac_public[1], mac_public[0], epd_model_string[epd_model]);
+    }
     obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 1, 17, (char *)buff, 1);
+
     sprintf(buff, "%s", BLE_conn_string[ble_get_connected()]);
     obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 232, 20, (char *)buff, 1);
-    sprintf(buff, "%02d:%02d", ((time_is / 60) / 60) % 24, (time_is / 60) % 60);
-    obdWriteStringCustom(&obd, (GFXfont *)&DSEG14_Classic_Mini_Regular_40, 50, 65, (char *)buff, 1);
-    sprintf(buff, "%d'C", EPD_read_temp());
-    obdWriteStringCustom(&obd, (GFXfont *)&Special_Elite_Regular_30, 10, 95, (char *)buff, 1);
-    sprintf(buff, "Battery %dmV", battery_mv);
+
+    // Convert Unix timestamp to date (yyyy/mm/dd)
+    // Days since epoch (1970-01-01)
+    uint32_t days = time_is / 86400;
+    uint32_t year = 1970;
+    uint32_t month = 1;
+    uint32_t day = 1;
+
+    // Calculate year
+    while (1) {
+        uint32_t days_in_year = 365;
+        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+            days_in_year = 366; // leap year
+        }
+        if (days >= days_in_year) {
+            days -= days_in_year;
+            year++;
+        } else {
+            break;
+        }
+    }
+
+    // Calculate month and day
+    uint8_t days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        days_in_month[1] = 29; // February in leap year
+    }
+
+    for (month = 1; month <= 12; month++) {
+        if (days >= days_in_month[month - 1]) {
+            days -= days_in_month[month - 1];
+        } else {
+            day = days + 1;
+            break;
+        }
+    }
+
+    sprintf(buff, "%04d/%02d/%02d", year, month, day);
+    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 80, 65, (char *)buff, 1);
+
+    sprintf(buff, "Synology");
+    obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 80, 95, (char *)buff, 1);
+
+    sprintf(buff, "Bat %dmV  %d'C", battery_mv, EPD_read_temp());
     obdWriteStringCustom(&obd, (GFXfont *)&Dialog_plain_16, 10, 120, (char *)buff, 1);
     FixBuffer(epd_temp, epd_buffer, resolution_w, resolution_h);
     EPD_Display(epd_buffer, resolution_w * resolution_h / 8, full_or_partial);

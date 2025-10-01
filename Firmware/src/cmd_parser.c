@@ -64,5 +64,13 @@ void cmd_parser(void * p){
 	}
 	else if(inData == 0xE0){// force set an EPD model, if it wasnt detect automatically correct
 		set_EPD_model(req->dat[1]);
+	}else if(inData == 0xE1){// Set custom name (max 15 chars)
+		// Copy custom name from command data (req->dat[1] onwards)
+		for(int i = 0; i < 15; i++) {
+			if(req->dat[i + 1] == 0) break; // Stop at null terminator
+			settings.custom_name[i] = req->dat[i + 1];
+		}
+		settings.custom_name[15] = 0; // Ensure null terminator
+		save_settings_to_flash();
 	}
 }

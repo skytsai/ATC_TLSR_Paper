@@ -305,18 +305,29 @@
 
     function setTime(hourOffset) {
       let unixNow = Math.round(Date.now() / 1000)+(60*60*hourOffset);
-	  
+
 	  var s = new Date(unixNow*1000).toLocaleTimeString("de-DE")
 
       addLog("Setting time : " + s + " : dd" + intToHex4(unixNow));
       rxTxSendCommand(hexToBytes("dd" + intToHex4(unixNow)));
     }
-	
+
 	function sendForceEpd(nr)
 	{
       addLog("Forcing EPD : e0" + byteToHex(nr+1));
       rxTxSendCommand(hexToBytes("e0" + byteToHex(nr+1)));
 	}
+
+	function setCustomName(name) {
+      // Convert string to hex (max 15 chars)
+      var hexName = "e1";
+      for(var i = 0; i < name.length && i < 15; i++) {
+        hexName += name.charCodeAt(i).toString(16).padStart(2, '0');
+      }
+      hexName += "00"; // Null terminator
+      addLog("Setting custom name: " + name + " : " + hexName);
+      rxTxSendCommand(hexToBytes(hexName));
+    }
 
     function setStatus(statusText) {
       document.getElementById("status").innerHTML = statusText;
@@ -410,6 +421,9 @@
   <label for="hour">Hour offset:</label>
 <input type="number" id="hourOffset" min="-12" max="12" value="2"/><br>
   <button type="button" onclick="setTime(document.getElementById(&quot;hourOffset&quot;).value);">Set Time</button><br><br>
+  <label for="customName">Custom Name (max 15 chars):</label>
+<input type="text" id="customName" maxlength="15" placeholder="e.g., Room 1, Office" value=""/><br>
+  <button type="button" onclick="setCustomName(document.getElementById(&quot;customName&quot;).value);">Set Custom Name</button><br><br>
   <label for="hour">Force EPD Model:</label>
 <select id="forceEPDselection">
   <option>BW213</option>

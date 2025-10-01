@@ -37,6 +37,11 @@ void reset_settings_to_default(void)
 	settings.measure_interval = 10;
 	settings.temp_offset = 0;
 	settings.temp_alarm_point = 5;
+
+	// Initialize custom name to empty string
+	for (int i = 0; i < 16; i++) {
+		settings.custom_name[i] = 0;
+	}
 }
 
 void save_settings_to_flash(void)
